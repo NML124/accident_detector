@@ -42,9 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   bool crash = false;
   bool answered = false;
+  bool safe = false;
 
   late FlutterTts flutterTts;
-  final String _messageAlerte = "Are you okay ?";
+  final String _messageAlerte1 = "Are you okay ? If you are not, click \"no\".";
+  final String _messageAlerte2 = "I'm calling ambulance.";
 
   bool isCrashed(userAccelerometer) {
     return userAccelerometer != null
@@ -58,9 +60,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final accelerometer = _accelerometerValues;
-
-    print("Accelerometer : ${isCrashed(accelerometer)}");
-    print("Value 300 : ${isCrashed([302, 0, 0])}");
     return Scaffold(
       appBar: AppBar(
         title: const Text('Accident Detector'),
@@ -75,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 crash
-                    ? Text("There is a crash")
+                    ? Text("There is a crash $safe")
                     : Text("Everything is okay. Magnetometer : $accelerometer"),
                 OutlinedButton(onPressed: isSafe, child: Text("Is Okay ?")),
               ],
@@ -96,8 +95,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void isSafe() {
-    _speak();
-    showDialog(
+    if (answered) {
+      _speak();
+      answered = false;
+    }
+
+    showDialog<bool>(
         context: context,
         builder: (context) {
           return AlertDialog(
@@ -105,16 +108,19 @@ class _MyHomePageState extends State<MyHomePage> {
             content: Text("Are you okay ?"),
             actions: <Widget>[
               TextButton(
-                onPressed: () => {Navigator.of(context).pop("OK")},
+                onPressed: () => Navigator.pop(context, true),
                 child: const Text('Yes'),
               ),
               TextButton(
-                onPressed: () => {},
+                onPressed: () => Navigator.pop(context, false),
                 child: const Text('No'),
               ),
             ],
           );
-        });
+        }).then((value) {
+      answered = true;
+      safe = value!;
+    });
   }
 
   @override
@@ -154,11 +160,17 @@ class _MyHomePageState extends State<MyHomePage> {
     await flutterTts.setSpeechRate(0.4);
     await flutterTts.setPitch(0.2);
 
-    if (_messageAlerte != null) {
-      if (_messageAlerte!.isNotEmpty) {
-        await flutterTts.speak(_messageAlerte!);
+    await flutterTts.speak(_messageAlerte1);
+
+    Future.delayed(const Duration(seconds: 10), () {
+      if (!safe) {
+        flutterTts.speak(_messageAlerte1);
       }
-    }
+    }).then((_) => Future.delayed(const Duration(seconds: 5), () {
+          if (!safe) {
+            flutterTts.speak(_messageAlerte2);
+          }
+        }));
   }
 
   Future _stop() async {
