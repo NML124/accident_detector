@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool answered = false;
 
   late FlutterTts flutterTts;
-  final String _messageAlerte = "Are you okay ? Is there a crash ?";
+  final String _messageAlerte = "Are you okay ?";
 
   bool isCrashed(userAccelerometer) {
     return userAccelerometer != null
@@ -76,7 +76,8 @@ class _MyHomePageState extends State<MyHomePage> {
               children: <Widget>[
                 crash
                     ? Text("There is a crash")
-                    : Text("Everything is okay. Magnetometer : $accelerometer")
+                    : Text("Everything is okay. Magnetometer : $accelerometer"),
+                OutlinedButton(onPressed: isSafe, child: Text("Is Okay ?")),
               ],
             ),
           ),
@@ -94,9 +95,32 @@ class _MyHomePageState extends State<MyHomePage> {
     flutterTts.stop();
   }
 
+  void isSafe() {
+    _speak();
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Accident Detect"),
+            content: Text("Are you okay ?"),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => {Navigator.of(context).pop("OK")},
+                child: const Text('Yes'),
+              ),
+              TextButton(
+                onPressed: () => {},
+                child: const Text('No'),
+              ),
+            ],
+          );
+        });
+  }
+
   @override
   void initState() {
     super.initState();
+    initTextToSpeech();
     _streamSubscriptions.add(
       accelerometerEvents.listen(
         (AccelerometerEvent event) {
@@ -127,8 +151,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future _speak() async {
     await flutterTts.setVolume(1.0);
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.4);
+    await flutterTts.setPitch(0.2);
 
     if (_messageAlerte != null) {
       if (_messageAlerte!.isNotEmpty) {
